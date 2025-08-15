@@ -11,10 +11,8 @@ jobs:
     
     container:
       image: archlinux:latest
-    steps:
-      - name: Install base packages
-        run: |
-          pacman -Sy --noconfirm base
+   
+          
         
 
     steps:
@@ -24,6 +22,7 @@ jobs:
       - name: Install Docker CLI
         run: |
           sudo apt-get update
+          pacman -Sy --noconfirm base
           sudo apt-get install -y docker-ce docker-ce-cli
 
       - name: Run Arch ISO Builder in Docker
