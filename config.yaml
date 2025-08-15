@@ -1,0 +1,12 @@
+# ビルド全体の設定
+iso_name: Frank-linux
+work_dir: work
+out_dir: out
+profile: default
+
+# ISO ブート設定
+bootloader: syslinux
+label: FRANK_LINUX
+
+# squashfs オプション
+squashfs_opts: -comp zstd -Xbcj x86
