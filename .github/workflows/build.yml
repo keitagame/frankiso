@@ -24,7 +24,7 @@ jobs:
       - name: Prepare custom profile
         run: |
           mkdir -p /archlive/custom
-          cp -r ./profile/* /archlive/custom/
+          cp -r ./profiles/* /archlive/custom/
 
       - name: Build ISO
         run: |
