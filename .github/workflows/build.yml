@@ -11,7 +11,7 @@ jobs:
     services:
       docker:
         image: docker:dind
-        privileged: true
+        
 
     steps:
       - name: Checkout
