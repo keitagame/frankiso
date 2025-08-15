@@ -1,0 +1,33 @@
+name: Build Arch ISO
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          pacman -Sy --noconfirm arch-install-scripts mkinitcpio squashfs-tools xorriso syslinux git
+
+      - name: Make scripts executable
+        run: chmod +x build.sh profiles/default/post_install.sh
+
+      - name: Run build script
+        run: ./build.sh
+
+      - name: Upload ISO to GitHub Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          files: keita-linux.iso
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
