@@ -1,34 +1,37 @@
-name: Build Arch ISO
+name: Build Arch Linux ISO
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-  build-iso:
+  build:
     runs-on: ubuntu-latest
-    
     container:
       image: archlinux:latest
-   
-          
-        
-
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Install Docker CLI
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          pacman -Sy --noconfirm base
-          sudo apt-get install -y docker-ce docker-ce-cli
+          pacman -Sy --noconfirm archiso git base-devel
 
-      - name: Run Arch ISO Builder in Docker
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare custom profile
         run: |
-          docker run --rm -v $PWD:/build -w /build archlinux bash -c "
-            pacman -Sy --noconfirm arch-install-scripts mkinitcpio squashfs-tools xorriso syslinux &&
-            chmod +x build.sh profiles/default/post_install.sh &&
-            ./build.sh
-          "
+          mkdir -p /archlive/custom
+          cp -r ./profile/* /archlive/custom/
+
+      - name: Build ISO
+        run: |
+          mkarchiso -v -w /archlive/work -o /archlive/out /archlive/custom
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: archlinux-custom-iso
+          path: /archlive/out/*.iso
