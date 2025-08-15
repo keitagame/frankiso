@@ -9,4 +9,5 @@ bootloader: syslinux
 label: FRANK_LINUX
 
 # squashfs オプション
-squashfs_opts: -comp zstd -Xbcj x86
+squashfs_opts: -comp xz -Xbcj x86
+
