@@ -13,7 +13,8 @@ mkdir -p "${work_dir}" "${out_dir}"
 
 # ベースシステム構築
 echo "[BUILD] pacstrap -> ${work_dir}/root"
-pacstrap -c -d -G -R /mnt"${work_dir}/root" $(< profiles/"${profile}"/packages)
+pacstrap -c -G /mnt/work/root ...
+
 
 # fstab, hostname 生成
 genfstab -U "${work_dir}/root" >> "${work_dir}/root/etc/fstab"
