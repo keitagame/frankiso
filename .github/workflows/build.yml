@@ -8,9 +8,13 @@ on:
 jobs:
   build-iso:
     runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:dind
+    
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install base packages
+        run: |
+          pacman -Sy --noconfirm base
         
 
     steps:
