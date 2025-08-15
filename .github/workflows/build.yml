@@ -8,26 +8,24 @@ on:
 jobs:
   build-iso:
     runs-on: ubuntu-latest
-    container:
-      image: archlinux:latest
+    services:
+      docker:
+        image: docker:dind
+        privileged: true
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install dependencies
+      - name: Install Docker CLI
         run: |
-          pacman -Sy --noconfirm arch-install-scripts mkinitcpio squashfs-tools xorriso syslinux git
+          sudo apt-get update
+          sudo apt-get install -y docker.io
 
-      - name: Make scripts executable
-        run: chmod +x build.sh profiles/default/post_install.sh
-
-      - name: Run build script
-        run: ./build.sh
-
-      - name: Upload ISO to GitHub Releases
-        uses: softprops/action-gh-release@v1
-        with:
-          files: keita-linux.iso
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run Arch ISO Builder in Docker
+        run: |
+          docker run --rm -v $PWD:/build -w /build archlinux bash -c "
+            pacman -Sy --noconfirm arch-install-scripts mkinitcpio squashfs-tools xorriso syslinux &&
+            chmod +x build.sh profiles/default/post_install.sh &&
+            ./build.sh
+          "
