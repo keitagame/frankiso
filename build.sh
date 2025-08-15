@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# カレントディレクトリをスクリプト位置に固定
 cd "$(dirname "$0")"
 
-# 設定読み込み
-eval $(grep -E '^[a-z]+' config.yaml | sed 's/: /=/')
+# config.yaml を読み込む
+eval "$(awk -F': ' '/^[a-zA-Z_]+: / { gsub(/"/, "", $2); print $1 "=" $2 }' config.yaml)"
 
 
 # 作業ディレクトリ準備
