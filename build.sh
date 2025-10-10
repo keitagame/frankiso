@@ -33,7 +33,9 @@ mkfs.ext4 "$AIROOTFS_IMG"
 mkdir -p "$AIROOTFS_MOUNT"
 mount -o loop "$AIROOTFS_IMG" "$AIROOTFS_MOUNT"
 AIROOTFS="$AIROOTFS_MOUNT"
-pacstrap  "$AIROOTFS" base linux linux-firmware vim archiso mkinitcpio-archiso networkmanager plymouth
+pacstrap "$AIROOTFS" $(grep -v '^#' packages.conf)
+
+
 # ===== 設定ファイル追加 =====
 echo "[*] 基本設定を投入..."
 echo "keita" > "$AIROOTFS/etc/hostname"
