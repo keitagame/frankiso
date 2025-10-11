@@ -11,7 +11,8 @@ ISO_NAME="frankos"
 ISO_LABEL="FRANK_LIVE"
 ISO_VERSION="$(date +%Y.%m.%d)"
 OUTPUT="$PWD/out"
-ARCH="x86_64"
+ARCH="i686"
+
 
 
 echo "[*] 作業ディレクトリを初期化..."
