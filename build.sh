@@ -11,7 +11,7 @@ ISO_NAME="frankos"
 ISO_LABEL="FRANK_LIVE"
 ISO_VERSION="$(date +%Y.%m.%d)"
 OUTPUT="$PWD/out"
-ARCH="i686"
+ARCH="x86_64"
 
 
 
