@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build-archiso.sh
+
 
 # 依存: archiso, yq (v4), git（relengコピーが必要な場合）
 set -euo pipefail
