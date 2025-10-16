@@ -23,7 +23,7 @@ rm -rf "$WORKDIR" "$OUTPUT"
 mkdir -p "$AIROOTFS" "$ISO_ROOT" "$OUTPUT" $AIROOTFS/etc $AIROOTFS/etc/pacman.d
 
 cp pacman.conf "$AIROOTFS/etc/pacman.conf"
-cp pacman.d/mirrorlist "$AIROOTFS/etc/pacman.d/mirrorlist"
+cp mirrorlist "$AIROOTFS/etc/pacman.d/mirrorlist"
 # ===== ベースシステム作成 =====
 echo "[*] ベースシステムを pacstrap でインストール..."
 AIROOTFS_IMG="$WORKDIR/airootfs.img"
