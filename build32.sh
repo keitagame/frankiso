@@ -21,7 +21,8 @@ echo "[*] 作業ディレクトリを初期化..."
 rm -rf work/ out/ mnt_esp/
 rm -rf "$WORKDIR" "$OUTPUT"
 mkdir -p "$AIROOTFS" "$ISO_ROOT" "$OUTPUT"
-
+cp ./etc/pacman.conf "$AIROOTFS/etc/pacman.conf"
+cp ./etc/pacman.d/mirrorlist "$AIROOTFS/etc/pacman.d/mirrorlist"
 # ===== ベースシステム作成 =====
 echo "[*] ベースシステムを pacstrap でインストール..."
 AIROOTFS_IMG="$WORKDIR/airootfs.img"
