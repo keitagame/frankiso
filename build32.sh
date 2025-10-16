@@ -20,7 +20,8 @@ echo "[*] 作業ディレクトリを初期化..."
 
 rm -rf work/ out/ mnt_esp/
 rm -rf "$WORKDIR" "$OUTPUT"
-mkdir -p "$AIROOTFS" "$ISO_ROOT" "$OUTPUT"
+mkdir -p "$AIROOTFS" "$ISO_ROOT" "$OUTPUT" $AIROOTFS/etc $AIROOTFS/etc/pacman.d
+
 cp pacman.conf "$AIROOTFS/etc/pacman.conf"
 cp pacman.d/mirrorlist "$AIROOTFS/etc/pacman.d/mirrorlist"
 # ===== ベースシステム作成 =====
