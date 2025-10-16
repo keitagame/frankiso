@@ -50,11 +50,5 @@ jobs:
               ./build32.sh
             '
       - run: sudo chown -R $USER:$USER out
-      - name: Upload ISO artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: FRANK
-          path: out/*.iso
-
-
+      
       
