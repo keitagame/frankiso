@@ -1,4 +1,4 @@
-name: ビルド確認
+name: ビルド確認32bit
 
 on:
   workflow_dispatch:
