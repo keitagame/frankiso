@@ -1,0 +1,20 @@
+##
+## Arch Linux 32 mirrorlist
+## Generated manually (2025-10)
+##
+
+# Germany
+Server = http://mirror.archlinux32.org/$repo/os/$arch
+Server = https://mirror.archlinux32.org/$repo/os/$arch
+
+# Netherlands
+Server = http://nl.mirror.archlinux32.org/$repo/os/$arch
+Server = https://nl.mirror.archlinux32.org/$repo/os/$arch
+
+# USA
+Server = http://us.mirror.archlinux32.org/$repo/os/$arch
+Server = https://us.mirror.archlinux32.org/$repo/os/$arch
+
+# Japan (example, if available)
+Server = http://jp.mirror.archlinux32.org/$repo/os/$arch
+Server = https://jp.mirror.archlinux32.org/$repo/os/$arch
