@@ -1,0 +1,60 @@
+name: ビルド確認
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare pacman cache dir
+        run: mkdir -p .cache/pacman
+
+      - name: Cache pacman packages
+        uses: actions/cache@v4
+        with:
+          path: .cache/pacman
+          key: pacman-${{ runner.os }}-${{ hashFiles('build.sh', '**/*.pkglist', '**/packages.*', '**/*.yaml', '**/*.yml') }}
+          restore-keys: |
+            pacman-${{ runner.os }}-
+
+      - name: Pull Arch container
+        run: docker pull archlinux:latest
+
+      - name: Run build.sh inside privileged Arch container
+        run: |
+          docker run --rm --privileged \
+            -v "${GITHUB_WORKSPACE}:/work" \
+            -v "${GITHUB_WORKSPACE}/.cache/pacman:/var/cache/pacman/pkg" \
+            -w /work \
+            archlinux:latest bash -lc '
+              set -euo pipefail
+              sed -i "s/^#ParallelDownloads.*/ParallelDownloads = 15/" /etc/pacman.conf
+              pacman -Sy --noconfirm archlinux-keyring
+              pacman -Syu --noconfirm
+              pacman -S --noconfirm syslinux
+
+              pacman -S --noconfirm \
+                archiso yq git sudo \
+                squashfs-tools xorriso dosfstools e2fsprogs \
+                systemd mkinitcpio
+              chmod +x ./build32.sh
+              ./build32.sh
+            '
+      - run: sudo chown -R $USER:$USER out
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FRANK
+          path: out/*.iso
+
+
+      
