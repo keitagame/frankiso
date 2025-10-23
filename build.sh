@@ -26,7 +26,7 @@ echo "[*] ベースシステムを pacstrap でインストール..."
 AIROOTFS_IMG="$WORKDIR/airootfs.img"
 AIROOTFS_MOUNT="$WORKDIR/airootfs"
 
-# 8GB の空き容量を確保
+
 truncate -s 8G "$AIROOTFS_IMG"
 mkfs.ext4 "$AIROOTFS_IMG"
 
