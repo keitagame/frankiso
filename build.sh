@@ -12,7 +12,7 @@ ISO_LABEL="FRANK_LIVE"
 ISO_VERSION="$(date +%Y.%m.%d)"
 OUTPUT="$PWD/out"
 ARCH="x86_64"
-
+source ./profiles/$1/profile.conf
 
 
 echo "[*] 作業ディレクトリを初期化..."
