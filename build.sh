@@ -113,7 +113,7 @@ echo "Welcome to MyArch Live!" > "$AIROOTFS/root/README.txt"
 # ===== squashfs 作成 =====
 echo "[*] squashfs イメージ作成..."
 mkdir -p "$ISO_ROOT/arch/$ARCH"
-mksquashfs "$AIROOTFS" "$ISO_ROOT/arch/$ARCH/airootfs.sfs"  -comp lz4 -Xhc
+mksquashfs "$AIROOTFS" "$ISO_ROOT/arch/$ARCH/airootfs.sfs"  -comp lz4
 
 
 # ===== ブートローダー構築 (systemd-boot UEFI) =====
