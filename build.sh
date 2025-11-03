@@ -105,7 +105,7 @@ echo "root:root" | arch-chroot "$AIROOTFS" chpasswd
 
 # systemdサービス有効化
 arch-chroot "$AIROOTFS" systemctl enable NetworkManager
-
+arch-chroot $commands
 # ===== カスタムファイル追加例 =====
 mkdir -p "$AIROOTFS/root"
 echo "Welcome to MyArch Live!" > "$AIROOTFS/root/README.txt"
