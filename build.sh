@@ -43,7 +43,7 @@ echo "keita" > "$AIROOTFS/etc/hostname"
 
 cat <<EOF > "$AIROOTFS/etc/vconsole.conf"
 KEYMAP=jp106
-FONT=Lat2-Terminus16
+
 EOF
 
 cat <<EOF > "$AIROOTFS/etc/locale.gen"
