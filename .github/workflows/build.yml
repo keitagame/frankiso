@@ -47,7 +47,7 @@ jobs:
                 squashfs-tools xorriso dosfstools e2fsprogs \
                 systemd mkinitcpio
               chmod +x ./build.sh
-              ./build.sh
+              ./build.sh minimal
             '
       - run: sudo chown -R $USER:$USER out
       
