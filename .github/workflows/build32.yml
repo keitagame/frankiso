@@ -1,4 +1,4 @@
-name: ビルド確認32bit
+name: buildminimal
 
 on:
   workflow_dispatch:
@@ -46,8 +46,8 @@ jobs:
                 archiso yq git sudo \
                 squashfs-tools xorriso dosfstools e2fsprogs \
                 systemd mkinitcpio
-              chmod +x ./build32.sh
-              ./build32.sh
+              chmod +x ./build.sh
+              ./build.sh minimal
             '
       - run: sudo chown -R $USER:$USER out
       
