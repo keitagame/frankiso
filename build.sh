@@ -39,7 +39,7 @@ pacstrap "$AIROOTFS" $(grep -v '^#' packages.conf)
 
 # ===== 設定ファイル追加 =====
 echo "[*] 基本設定を投入..."
-echo "keita" > "$AIROOTFS/etc/hostname"
+echo "frank" > "$AIROOTFS/etc/hostname"
 
 cat <<EOF > "$AIROOTFS/etc/vconsole.conf"
 KEYMAP=jp106
