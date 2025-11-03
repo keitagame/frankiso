@@ -34,7 +34,7 @@ mkfs.ext4 "$AIROOTFS_IMG"
 mkdir -p "$AIROOTFS_MOUNT"
 mount -o loop "$AIROOTFS_IMG" "$AIROOTFS_MOUNT"
 AIROOTFS="$AIROOTFS_MOUNT"
-pacstrap "$AIROOTFS" $(grep -v '^#' packages.conf)
+pacstrap "$AIROOTFS" $packages
 
 
 # ===== 設定ファイル追加 =====
