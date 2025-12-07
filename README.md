@@ -3,6 +3,8 @@
 This is the build script for the frankos iso image file.<br>
 こちらはfrankosのisoイメージファイルのビルドスクリプトです。<br>
 # build
+Build it on Archlinux<br>
+ArchLinuxでビルドしてください<br>
 ```shell
 #まず依存関係を整える
 chmod +x build.sh
