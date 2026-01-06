@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-
-# 依存: archiso, yq (v4), git（relengコピーが必要な場合）
+# 完全32bit (i686) Arch Linux ライブISO作成スクリプト
+# 依存: archiso, yq (v4), git, arch-install-scripts
 set -euo pipefail
 
 WORKDIR="$PWD/work"
@@ -13,174 +13,243 @@ ISO_VERSION="$(date +%Y.%m.%d)"
 OUTPUT="$PWD/out"
 ARCH="i686"
 
+echo "=========================================="
+echo "FrankOS 32bit (i686) ISO Builder"
+echo "=========================================="
 
-
-
+# ===== 作業ディレクトリ初期化 =====
 echo "[*] 作業ディレクトリを初期化..."
+rm -rf "$WORKDIR" "$OUTPUT" mnt_esp/
+mkdir -p "$AIROOTFS" "$ISO_ROOT" "$OUTPUT"
 
-rm -rf work/ out/ mnt_esp/
-rm -rf "$WORKDIR" "$OUTPUT"
-mkdir -p "$AIROOTFS" "$ISO_ROOT" "$OUTPUT" $AIROOTFS/etc $AIROOTFS/etc/pacman.d
+# ===== 32bit用 pacman.conf 作成 =====
+echo "[*] 32bit用 pacman 設定を作成..."
+mkdir -p "$AIROOTFS/etc/pacman.d"
 
-cp pacman.conf "$AIROOTFS/etc/pacman.conf"
-cp mirrorlist "$AIROOTFS/etc/pacman.d/mirrorlist"
+cat <<'EOF' > "$AIROOTFS/etc/pacman.conf"
+[options]
+HoldPkg     = pacman glibc
+Architecture = i686
+CheckSpace
+SigLevel    = Required DatabaseOptional
+LocalFileSigLevel = Optional
+
+# 32bit Arch Linux リポジトリ（Arch32 / archlinux32.org）
+[core]
+Include = /etc/pacman.d/mirrorlist
+
+[extra]
+Include = /etc/pacman.d/mirrorlist
+
+[community]
+Include = /etc/pacman.d/mirrorlist
+EOF
+
+# ===== 32bit用ミラーリスト作成 =====
+cat <<'EOF' > "$AIROOTFS/etc/pacman.d/mirrorlist"
+# Arch Linux 32bit ミラー
+Server = https://mirror.archlinux32.org/$arch/$repo
+Server = https://de.mirror.archlinux32.org/$arch/$repo
+Server = https://uk.mirror.archlinux32.org/$arch/$repo
+EOF
+
 # ===== ベースシステム作成 =====
-echo "[*] ベースシステムを pacstrap でインストール..."
+echo "[*] 32bit ベースシステムを pacstrap でインストール..."
 AIROOTFS_IMG="$WORKDIR/airootfs.img"
 AIROOTFS_MOUNT="$WORKDIR/airootfs"
 
 # 8GB の空き容量を確保
 truncate -s 8G "$AIROOTFS_IMG"
-mkfs.ext4 "$AIROOTFS_IMG"
+mkfs.ext4 -F "$AIROOTFS_IMG"
 
 # マウント
 mkdir -p "$AIROOTFS_MOUNT"
 mount -o loop "$AIROOTFS_IMG" "$AIROOTFS_MOUNT"
 AIROOTFS="$AIROOTFS_MOUNT"
-pacstrap "$AIROOTFS" $(grep -v '^#' packages.conf)
 
+# 32bit用 pacstrap 実行（Architecture指定）
+# packages.conf があれば使用、なければ基本パッケージのみ
+if [ -f packages.conf ]; then
+    PACKAGES=$(grep -v '^#' packages.conf | tr '\n' ' ')
+else
+    PACKAGES="base linux linux-firmware networkmanager sudo vim nano"
+fi
 
-# ===== 設定ファイル追加 =====
+echo "[*] インストールパッケージ: $PACKAGES"
+
+# pacstrap で32bitシステムをインストール
+pacstrap -C "$AIROOTFS/etc/pacman.conf" -M "$AIROOTFS" $PACKAGES
+
+# ===== 基本設定 =====
 echo "[*] 基本設定を投入..."
-echo "keita" > "$AIROOTFS/etc/hostname"
+echo "frankos" > "$AIROOTFS/etc/hostname"
 
-cat <<EOF > "$AIROOTFS/etc/vconsole.conf"
+cat <<'EOF' > "$AIROOTFS/etc/vconsole.conf"
 KEYMAP=jp106
 FONT=Lat2-Terminus16
 EOF
 
-cat <<EOF > "$AIROOTFS/etc/locale.gen"
+cat <<'EOF' > "$AIROOTFS/etc/locale.gen"
 en_US.UTF-8 UTF-8
+ja_JP.UTF-8 UTF-8
 EOF
 
-mkdir -p "$AIROOTFS/etc/dconf/db/local.d"
-
-
-
+# locale 生成
 arch-chroot "$AIROOTFS" locale-gen
-mkdir -p "$AIROOTFS/etc/pacman.d"
-cp /etc/pacman.conf "$AIROOTFS/etc/"
-cp /etc/pacman.d/mirrorlist "$AIROOTFS/etc/pacman.d/"
 echo "LANG=en_US.UTF-8" > "$AIROOTFS/etc/locale.conf"
 
-
-sed -i 's/^HOOKS=.*/HOOKS=(base udev archiso block filesystems keyboard fsck)/' \
+# ===== mkinitcpio 設定（32bit最適化） =====
+echo "[*] mkinitcpio 設定..."
+sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)/' \
     "$AIROOTFS/etc/mkinitcpio.conf"
 
+# 32bit用の最小限モジュール
 sed -i 's/^MODULES=.*/MODULES=(loop squashfs)/' "$AIROOTFS/etc/mkinitcpio.conf"
 
-arch-chroot "$AIROOTFS" mkinitcpio -P 
+# initramfs 生成
+arch-chroot "$AIROOTFS" mkinitcpio -P
 
+# ===== pacman鍵の初期化 =====
+echo "[*] pacman 鍵の初期化..."
+arch-chroot "$AIROOTFS" pacman-key --init
+arch-chroot "$AIROOTFS" pacman-key --populate archlinux32 || \
+arch-chroot "$AIROOTFS" pacman-key --populate archlinux
+
+# データベース更新
+arch-chroot "$AIROOTFS" pacman -Sy --noconfirm || true
+
+# ===== ユーザー設定 =====
+echo "[*] ユーザー設定..."
+# rootパスワード（デフォルト: root）
+echo "root:root" | arch-chroot "$AIROOTFS" chpasswd
+
+# liveユーザー作成
+arch-chroot "$AIROOTFS" useradd -m -G wheel -s /bin/bash live || true
+echo "live:live" | arch-chroot "$AIROOTFS" chpasswd
+
+# sudoers 設定
+echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" >> "$AIROOTFS/etc/sudoers"
+
+# ===== サービス有効化 =====
+echo "[*] サービス有効化..."
+arch-chroot "$AIROOTFS" systemctl enable NetworkManager || true
+
+# 自動ログイン設定（オプション）
+mkdir -p "$AIROOTFS/etc/systemd/system/getty@tty1.service.d"
+cat <<'EOF' > "$AIROOTFS/etc/systemd/system/getty@tty1.service.d/autologin.conf"
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty -o '-p -f -- \\u' --noclear --autologin live %I $TERM
+EOF
+
+# ===== カスタムファイル =====
+echo "[*] カスタムファイル追加..."
+mkdir -p "$AIROOTFS/root"
+cat <<'EOF' > "$AIROOTFS/root/README.txt"
+Welcome to FrankOS 32bit Live!
+
+This is a complete i686 (32-bit) Arch Linux-based live system.
+
+Default credentials:
+  root / root
+  live / live
+
+Enjoy!
+EOF
+
+# ===== squashfs 作成 =====
+echo "[*] squashfs イメージ作成..."
+mkdir -p "$ISO_ROOT/arch/$ARCH"
+mksquashfs "$AIROOTFS" "$ISO_ROOT/arch/$ARCH/airootfs.sfs" -comp xz -b 1M
+
+# ===== BIOS ブートローダー (SYSLINUX/ISOLINUX) =====
+echo "[*] BIOS ブートローダー準備..."
 mkdir -p "$ISO_ROOT/isolinux"
-cp /usr/lib/syslinux/bios/isolinux.bin "$ISO_ROOT/isolinux/"
-cp /usr/lib/syslinux/bios/ldlinux.c32 "$ISO_ROOT/isolinux/"
-cp /usr/lib/syslinux/bios/menu.c32 "$ISO_ROOT/isolinux/"
-cp /usr/lib/syslinux/bios/libcom32.c32 "$ISO_ROOT/isolinux/"
-cp /usr/lib/syslinux/bios/libutil.c32 "$ISO_ROOT/isolinux/"
 
-cat <<EOF > "$ISO_ROOT/isolinux/isolinux.cfg"
+# 32bit用のsyslinuxバイナリをコピー
+# システムに32bit版がない場合は、/usr/lib/syslinux/bios/ から
+cp /usr/lib/syslinux/bios/isolinux.bin "$ISO_ROOT/isolinux/" || \
+cp /usr/lib/ISOLINUX/isolinux.bin "$ISO_ROOT/isolinux/"
+
+cp /usr/lib/syslinux/bios/*.c32 "$ISO_ROOT/isolinux/" 2>/dev/null || true
+
+# isolinux.cfg 作成
+cat <<'EOF' > "$ISO_ROOT/isolinux/isolinux.cfg"
 UI menu.c32
 PROMPT 0
 TIMEOUT 50
 DEFAULT frankos
 
 LABEL frankos
-    MENU LABEL Boot FrankOS Live (BIOS)
-    LINUX /vmlinuz-linux
-    INITRD /initramfs-linux.img
+    MENU LABEL Boot FrankOS 32bit Live (BIOS)
+    LINUX /arch/boot/i686/vmlinuz-linux
+    INITRD /arch/boot/i686/initramfs-linux.img
     APPEND archisobasedir=arch archisolabel=FRANK_LIVE quiet splash
 EOF
 
-# 鍵の初期化
-arch-chroot "$AIROOTFS" pacman-key --init
-arch-chroot "$AIROOTFS" pacman-key --populate archlinux
-
-# pacman DBの初期化（念のため）
-arch-chroot "$AIROOTFS" pacman -Sy --noconfirm
-
-# 最新のmirrorlistをISOに組み込む
-cp /etc/pacman.d/mirrorlist "$AIROOTFS/etc/pacman.d/"
-
-
-
-# root パスワード設定（例: "root"）
-echo "root:root" | arch-chroot "$AIROOTFS" chpasswd
-
-# systemdサービス有効化
-arch-chroot "$AIROOTFS" systemctl enable NetworkManager
-
-# ===== カスタムファイル追加例 =====
-mkdir -p "$AIROOTFS/root"
-echo "Welcome to MyArch Live!" > "$AIROOTFS/root/README.txt"
-
-# ===== squashfs 作成 =====
-echo "[*] squashfs イメージ作成..."
-mkdir -p "$ISO_ROOT/arch/$ARCH"
-mksquashfs "$AIROOTFS" "$ISO_ROOT/arch/$ARCH/airootfs.sfs"  -comp lz4
-
-
-# ===== ブートローダー構築 (systemd-boot UEFI) =====
-echo "[*] EFI ブートローダー準備..."
-# 1. EFI用FATイメージ作成
-dd if=/dev/zero of="$ISO_ROOT/efiboot.img" bs=1M count=200
+# ===== UEFI ブートローダー (32bit EFI) =====
+echo "[*] 32bit UEFI ブートローダー準備..."
+# 注意: 32bit UEFIは稀だが、対応させる場合
+dd if=/dev/zero of="$ISO_ROOT/efiboot.img" bs=1M count=100
 mkfs.vfat "$ISO_ROOT/efiboot.img"
 
-
-# 2. マウントしてファイルコピー
-mkdir mnt_esp
-mkdir $ISO_ROOT/EFI
-mkdir $ISO_ROOT/EFI/BOOT
-cp /usr/lib/systemd/boot/efi/systemd-bootx64.efi "$ISO_ROOT/EFI/BOOT/BOOTX64.EFI"
-# 2. マウントしてファイルコピー
-sudo mount "$ISO_ROOT/efiboot.img" mnt_esp
+mkdir -p mnt_esp
+mount "$ISO_ROOT/efiboot.img" mnt_esp
 
 mkdir -p mnt_esp/EFI/BOOT
-cp /usr/lib/systemd/boot/efi/systemd-bootx64.efi mnt_esp/EFI/BOOT/BOOTX64.EFI
-cp "$AIROOTFS/boot/vmlinuz-linux" mnt_esp/
-cp "$AIROOTFS/boot/initramfs-linux.img" mnt_esp/
-# loader.conf と arch.conf を配置
-mkdir -p mnt_esp/loader/entries
-cat <<EOF | sudo tee mnt_esp/loader/loader.conf
-default  FRANK_LIVE
-timeout  3
-console-mode max
-editor   no
-EOF
 
-cat <<EOF | sudo tee mnt_esp/loader/entries/arch.conf
-title   FRANK_LIVE (${ISO_VERSION})
-linux   /vmlinuz-linux
-initrd  /initramfs-linux.img
-options archisobasedir=arch archisolabel=FRANK_LIVE
-EOF
+# 32bit EFI ブートローダー（ia32）
+# systemd-boot の32bit版、または grub-i386を使用
+# ここではgrub-i386の例
+if [ -f /usr/lib/grub/i386-efi/grubia32.efi ]; then
+    cp /usr/lib/grub/i386-efi/grubia32.efi mnt_esp/EFI/BOOT/BOOTIA32.EFI
+fi
 
-sudo umount -l mnt_esp
+# カーネルとinitramfsをコピー
+mkdir -p mnt_esp/arch/boot/i686
+cp "$AIROOTFS/boot/vmlinuz-linux" mnt_esp/arch/boot/i686/
+cp "$AIROOTFS/boot/initramfs-linux.img" mnt_esp/arch/boot/i686/
+
+umount mnt_esp
 rmdir mnt_esp
 
-# カーネルと initramfs を ISOルートにコピー
-cp "$AIROOTFS/boot/vmlinuz-linux" "$ISO_ROOT/"
-cp "$AIROOTFS/boot/initramfs-linux.img" "$ISO_ROOT/"
-# アンマウント
-sudo umount -l "$AIROOTFS"
+# ===== カーネルとinitramfsをISOルートに配置 =====
+mkdir -p "$ISO_ROOT/arch/boot/$ARCH"
+cp "$AIROOTFS/boot/vmlinuz-linux" "$ISO_ROOT/arch/boot/$ARCH/"
+cp "$AIROOTFS/boot/initramfs-linux.img" "$ISO_ROOT/arch/boot/$ARCH/"
 
+# ===== airootfs アンマウント =====
+echo "[*] airootfs をアンマウント..."
+umount -l "$AIROOTFS_MOUNT" || umount "$AIROOTFS_MOUNT"
+losetup -D 2>/dev/null || true
 
-losetup -D
-
-# ===== ISO 作成 =====
-echo "[*] ISO イメージ生成..."
+# ===== ISO イメージ生成 =====
+echo "[*] ISO イメージ生成中..."
 xorriso -as mkisofs \
+  -iso-level 3 \
+  -full-iso9660-filenames \
+  -volid "$ISO_LABEL" \
+  -appid "FrankOS 32bit Live" \
+  -publisher "FrankOS Project" \
+  -preparer "build.sh" \
   -eltorito-boot isolinux/isolinux.bin \
+  -eltorito-catalog isolinux/boot.cat \
   -no-emul-boot \
   -boot-load-size 4 \
   -boot-info-table \
-  -iso-level 3 \
-  -full-iso9660-filenames \
-  -volid FRANK_LIVE \
   -eltorito-alt-boot \
   -e efiboot.img \
   -no-emul-boot \
+  -isohybrid-mbr /usr/lib/syslinux/bios/isohdpfx.bin \
   -isohybrid-gpt-basdat \
   -output "${OUTPUT}/${ISO_NAME}-${ISO_VERSION}-${ARCH}.iso" \
   "$ISO_ROOT"
 
-echo "[*] 完了! 出力: ${OUTPUT}/${ISO_NAME}-${ISO_VERSION}-${ARCH}.iso"
+echo "=========================================="
+echo "[✓] 完了!"
+echo "出力: ${OUTPUT}/${ISO_NAME}-${ISO_VERSION}-${ARCH}.iso"
+echo "=========================================="
+echo ""
+echo "テスト方法:"
+echo "  qemu-system-i386 -m 2048 -cdrom ${OUTPUT}/${ISO_NAME}-${ISO_VERSION}-${ARCH}.iso"
+echo ""
