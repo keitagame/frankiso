@@ -36,7 +36,7 @@ mount -o loop "$AIROOTFS_IMG" "$AIROOTFS_MOUNT"
 AIROOTFS="$AIROOTFS_MOUNT"
 pacstrap "$AIROOTFS" $packages
 
-
+sudo cp mirror-ouchi /etc/pacman.d/mirrorlist
 # ===== 設定ファイル追加 =====
 echo "[*] 基本設定を投入..."
 echo "frank" > "$AIROOTFS/etc/hostname"
