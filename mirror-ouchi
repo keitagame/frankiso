@@ -1,0 +1,20 @@
+##
+## Arch Linux ouchi-server mirrorlist
+## Generated manually (2025-10)
+##
+
+# Germany
+Server = http://ouchi-server.f5.si/$repo/os/$arch
+Server = https://ouchi-server.f5.si/$repo/os/$arch
+
+# Netherlands
+Server = http://ouchi-server.f5.si/$repo/os/$arch
+Server = https://ouchi-server.f5.si/$repo/os/$arch
+
+# USA
+Server = http://ouchi-server.f5.si/$repo/os/$arch
+Server = https://ouchi-server.f5.si/$repo/os/$arch
+
+# Japan (example, if available)
+Server = http://ouchi-server.f5.si/$repo/os/$arch
+Server = https://ouchi-server.f5.si/$repo/os/$arch
