@@ -4,6 +4,7 @@
 # 依存: archiso, yq (v4), git, arch-install-scripts
 set -euo pipefail
 
+
 WORKDIR="$PWD/work"
 ISO_ROOT="$WORKDIR/iso"
 AIROOTFS="$WORKDIR/airootfs"
